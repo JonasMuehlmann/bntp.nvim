@@ -48,6 +48,9 @@ class Tag(UserList):
     def get_leaf(self) -> str:
         return self.data[-1]
 
+    def get_root_tag(self) -> str:
+        return self.data[0]
+
     def remove_root_tag(self) -> None:
         self.data.pop(0)
 
@@ -147,28 +150,50 @@ class TagHierachy:
         # Direct parent reached, append new node
 
         elif not old_tag.get_parents():
-            node[node.index(old_tag)] = new_tag
+            i_tag: int = pyaoi.find_if(
+                node,
+                lambda list_item: list_item == str(old_tag)
+                or str(old_tag) in list_item,
+            )
+            
+            # TODO: Clean up this mess of a function
+            # Not sure how robust this is...
+            # Narrator: "Turns out it isn't robust at all."
+            if isinstance(node[i_tag], str):
+                node[i_tag] = str(new_tag)
+
+            elif isinstance(node[i_tag], dict):
+                node[i_tag][str(new_tag)] = node[i_tag].pop(str(old_tag))
+
             self.tags_file = yaml.dump(self.tags)
 
         # Recurse to new tag's direct parent
         else:
             if isinstance(node, dict):
-                old_tag.remove_root_tag()
-                parent = old_tag.get_direct_parent()
+                parent = old_tag.get_root_tag()
                 node = node[parent]
+                old_tag.remove_root_tag()
 
             elif isinstance(node, list):
+                parent = old_tag.get_root_tag()
                 old_tag.remove_root_tag()
-                parent = old_tag.get_direct_parent()
 
                 for i, list_item in enumerate(node):
                     if isinstance(list_item, dict) and parent in list_item:
-                        node = list_item[parent]
+                        if isinstance(list(list_item.values())[0], str):
+                            list_item[parent] = str(new_tag)
+                            # This is a bit of ahacky workaround!
+                            self.tags_file = yaml.dump(self.tags)
+                            return
+                        else:
+                            node = list_item[parent]
+                        break
                     # A node in parents is turned from a string to a
                     # dictionary and gets it's first child
                     elif list_item == parent:
                         node[i] = {parent: []}
                         node = node[i][parent]
+                        break
 
             self.rename_tag(old_tag, new_tag, node)
 
