@@ -1,5 +1,6 @@
 [tool.semantic_release]
 version_variable = ["setup.py:__version__"]
+major_on_zero = false
 
 [tool.black]
 line-length = 88
