@@ -12,7 +12,7 @@ with open("requirements.txt", "r", encoding="utf-8") as f:
 __version__ = "0.1.1"
 
 setuptools.setup(
-    name="pyaoi",
+    name="productivity.nvim",
     version=__version__,
     author="Jonas Muehlmann",
     author_email="jonasmuehlmann@protonmail.com",
@@ -20,7 +20,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/JonasMuehlmann/productivity.nvim",
-    packages=setuptools.find_packages("productivity.py"),
+    packages=setuptools.find_packages(exclude=("tests",)),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
