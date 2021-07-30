@@ -2,6 +2,7 @@
 version_variable = ["setup.py:__version__"]
 major_on_zero = false
 branch = "main"
+changelog_file = ../README.md
 
 [tool.black]
 line-length = 88
