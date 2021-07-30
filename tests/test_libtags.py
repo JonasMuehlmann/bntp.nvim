@@ -285,7 +285,44 @@ class TestTagHierarchy:
             assert hierarchy.tags_file == _yml_new
 
     class TestRenameTag:
-        pass
+        # TODO: Add tests to make sure only first occurence of tag is renamed
+        def test_rename_top_level(self):
+            FILE_PATH: Path = create_test_file(self, "test_rename_top_level", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": ["foo", "bar"]}
+            hierarchy.rename_tag(libtags.Tag("foo"), libtags.Tag("bar2"))
+
+            assert hierarchy.tags == {"tags": ["bar2", "bar"]}
+
+        def test_nested_leaf_only_child(self):
+            FILE_PATH: Path = create_test_file(
+                self, "test_nested_non_leaf_only_child", "yaml"
+            )
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": "foobar"}, "bar"]}
+            hierarchy.rename_tag(libtags.Tag("foo::foobar"), libtags.Tag("bar2"))
+
+            assert hierarchy.tags == {"tags": [{"foo": "bar2"}, "bar"]}
+
+        def test_nested_leaf(self):
+            FILE_PATH: Path = create_test_file(self, "test_nested_non_leaf", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": ["foobar", "barbaz"]}, "bar"]}
+            hierarchy.rename_tag(libtags.Tag("foo::foobar"), libtags.Tag("bar2"))
+
+            assert hierarchy.tags == {"tags": [{"foo": ["bar2", "barbaz"]}, "bar"]}
+
+        def test_nested_non_leaf(self):
+            FILE_PATH: Path = create_test_file(self, "test_nested_leaf", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": ["foobar"]}, "bar"]}
+            hierarchy.rename_tag(libtags.Tag("foo"), libtags.Tag("bar2"))
+
+            assert hierarchy.tags == {"tags": [{"bar2": ["foobar"]}, "bar"]}
 
     class TestAddTag:
         pass
