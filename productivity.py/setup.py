@@ -3,7 +3,7 @@
 
 import setuptools  # type: ignore
 
-with open("README.md", "r", encoding="utf-8") as readme:
+with open("../README.md", "r", encoding="utf-8") as readme:
     long_description = readme.read()
 
 __version__ = "0.1.1"
