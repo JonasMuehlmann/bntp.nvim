@@ -16,7 +16,7 @@ script: pytest
 jobs:
   include:
     - stage: deploy
-      python: "3.6"
+      python: "3.9"
       script:
         - git config --global user.name "semantic-release (via TravisCI)"
         - git config --global user.email "semantic-release@travis"
