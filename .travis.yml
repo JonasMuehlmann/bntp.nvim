@@ -1,0 +1,34 @@
+language: python
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8"
+  - "3.9"
+
+install:
+  - pip install pytest
+  - pip install -r requirements.txt
+
+script: pytest
+
+notifications:
+  webhooks:
+    urls: https://webhooks.gitter.im/e/cd10585c8f9dc98ebec2
+    on_success: change
+    on_failure: always
+    on_start: never
+
+jobs:
+  include:
+    - stage: deploy
+      python: "3.6"
+      script:
+        - git config --global user.name "semantic-release (via TravisCI)"
+        - git config --global user.email "semantic-release@travis"
+        - pip install python-semantic-release
+        - echo $TRAVIS_PULL_REQUEST
+        - echo $TRAVIS_BRANCH
+        # python-semantic-release installs version of importlib-metadata
+        # that is too old for twine
+        - pip install -U importlib-metadata
+        - semantic-release -v Warning publish
