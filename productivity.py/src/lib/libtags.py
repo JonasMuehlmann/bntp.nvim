@@ -174,7 +174,7 @@ class TagHierachy:
                 lambda list_item: list_item == str(old_tag)
                 or str(old_tag) in list_item,
             )
-            
+
             # TODO: Clean up this mess of a function
             # Not sure how robust this is...
             # Narrator: "Turns out it isn't robust at all."
