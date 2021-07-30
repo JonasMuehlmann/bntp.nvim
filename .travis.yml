@@ -26,6 +26,5 @@ jobs:
         # python-semantic-release installs version of importlib-metadata
         # that is too old for twine
         - pip install -U importlib-metadata
-        - cd ..
         - semantic-release -v DEBUG publish
 
