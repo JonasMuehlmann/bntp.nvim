@@ -27,4 +27,5 @@ jobs:
         # that is too old for twine
         - pip install -U importlib-metadata
         - cd ..
-        - semantic-release -v Warning publish
+        - semantic-release -v DEBUG publish
+
