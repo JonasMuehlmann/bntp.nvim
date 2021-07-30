@@ -6,6 +6,9 @@ import setuptools  # type: ignore
 with open("../README.md", "r", encoding="utf-8") as readme:
     long_description = readme.read()
 
+with open("requirements.txt", "r", encoding="utf-8") as f:
+    requirements = f.readlines()
+
 __version__ = "0.1.1"
 
 setuptools.setup(
@@ -28,4 +31,5 @@ setuptools.setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.6",
+    install_requires=requirements,
 )
