@@ -11,13 +11,6 @@ install:
 
 script: pytest
 
-notifications:
-  webhooks:
-    urls: https://webhooks.gitter.im/e/cd10585c8f9dc98ebec2
-    on_success: change
-    on_failure: always
-    on_start: never
-
 jobs:
   include:
     - stage: deploy
