@@ -6,12 +6,12 @@ python:
   - "3.9"
 
 install:
+  - cd productivity.py
   - pip install pytest
   - pip install -r requirements.txt
+  - pip install -r dev-requirements.txt
 
-script:
-  - cd productivity.py
-  - pytest
+script: pytest
 
 jobs:
   include:
