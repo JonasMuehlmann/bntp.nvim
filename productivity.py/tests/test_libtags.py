@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-
 from pathlib import Path
 
 import pytest
 import yaml
-from lib import libtags
-
-from .util import create_test_file
+from src.lib import libtags
+from tests.util import create_test_file
 
 # Ignores:
 #   method could be function
