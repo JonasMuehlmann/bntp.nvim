@@ -17,7 +17,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/JonasMuehlmann/productivity.nvim",
-    py_modules=["pyaoi"],
+    packages=setuptools.find_packages("productivity.py"),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
