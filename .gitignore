@@ -1,5 +1,5 @@
 .lvimrc
 venv
 .idea/
-**/tests/data/
+**/tests/data/*
 __pycache__/
