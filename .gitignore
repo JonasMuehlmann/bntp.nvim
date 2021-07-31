@@ -1,4 +1,5 @@
+.lvimrc
 venv
 .idea/
-productivity.py/tests/data
+**/tests/data/
 __pycache__/
