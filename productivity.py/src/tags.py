@@ -19,6 +19,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """Usage:
     tags.py                       list_documents_with_tag <tag> <path>
     tags.py            -t  <file> is_leaf_tag_ambiguous   <tag>
@@ -39,17 +40,18 @@
         -v --version   show version.
         -D --dry_run   instead of changing files, print their new content
 
-"""
+"""  # noqa: D208, D415, D205, D100
+import sys
 from os.path import exists
 
 # Uses docopt-ng, not original docopt
 from docopt import docopt
 from schema import And, Optional, Or, Schema, SchemaError
 
-from lib.libtags import DocumentTagHandler, Tag, TagHierachy, is_tag
+from lib.libtags import DocumentTagHandler, Tag, TagHierachy, is_tag  # noqa: E0401
 
-if __name__ == "__main__":
-    args = docopt(version="productivity.nvim 0.1.0")
+if __name__ == "__main__":  # noqa C901
+    args = docopt(version="productivity.nvim 0.1.0")  # noqa: E1120
 
     schema = Schema(
         {
@@ -98,7 +100,7 @@ if __name__ == "__main__":
     try:
         args = schema.validate(args)
     except SchemaError as e:
-        exit(e)
+        sys.exit(e)
 
     # Passed arguments are made available as members after being stripped of
     # leading - and --,

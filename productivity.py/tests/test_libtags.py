@@ -2,7 +2,6 @@
 from pathlib import Path
 
 import pytest
-import yaml
 from src.lib import libtags
 
 from tests.util import create_test_file

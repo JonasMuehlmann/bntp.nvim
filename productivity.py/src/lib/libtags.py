@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""A library to interact with a yaml encoded tag hierachy and files using those tags."""
 # This file is part of productivity.py
 # Copyright © 2021 Jonas Muehlmann
 #
@@ -28,18 +29,35 @@ from typing import Dict, List, Optional, Union
 import pyaoi
 import yaml
 
+TagHierachyNode = Union[List, Dict, str]
 
-def is_tag(tag: str):
+
+def is_tag(tag: str) -> bool:
+    """Check whether a given str is a valid Tag."""
     # Example: foo-bar::baz_123
 
-    return re.match(r"^[a-zA-Z0-9_-]+(?:::[a-zA-Z_0-9_-]+)*$", tag)
+    return re.match(r"^\s*[a-zA-Z0-9_-]+(?:::[a-zA-Z_0-9_-]+)*\s*$", tag)
 
 
 class Tag(UserList):
-    def __init__(self, tag: Union[str, List[str]]) -> None:
+    """A list wrapper with additional methods to represent a Tags components."""
+
+    def __init__(self, tag: Union[str, List[str]]) -> None:  # noqa W0231
+        """Construct a Tag object from components specified as a list or string.
+
+        Args:
+            tag: A list of tag components(e.go ["foo", "bar"]) or
+                 a string representation of a tag(e.g. "foo::bar")
+
+
+        Raises:
+            ValueError: If tag is not a list or
+                        is a string that does satisfy is_tag()
+        """
+
         if isinstance(tag, str):
             if is_tag(tag):
-                self.data = tag.split("::")
+                self.data = tag.strip().split("::")
             else:
                 raise ValueError("Tag does not have correct format")
 
@@ -49,33 +67,57 @@ class Tag(UserList):
             raise ValueError("Invalid type of parameter tag")
 
     def __str__(self) -> str:
+        """Format the tag components like foo::bar::baz."""
+
         return "::".join(self.data)
 
     def __repr__(self) -> str:
+        """Format the tag components like foo::bar::baz."""
+
         return self.__str__()
 
     # Parentheses used because Tag is not defined since we are inside it
-    def get_parents(self) -> "Tag":
+    def get_parents(self) -> List["Tag"]:
+        """Get a list of parent tag components."""
+
         return self.data[:-1]
 
     def get_direct_parent(self) -> Optional[str]:
+        """Get the name of the direct parent tag."""
+
         if len(self.data) == 1:
             return None
 
         return self.data[-2]
 
     def get_leaf(self) -> str:
+        """Get the leaf tag(tag at end of 'chain')."""
+
         return self.data[-1]
 
     def get_root_tag(self) -> str:
+        """Get the root tag(tag at beginning of 'chain')."""
+
         return self.data[0]
 
     def remove_root_tag(self) -> None:
+        """Remove the root tag(tag at beginning of 'chain')."""
         self.data.pop(0)
 
 
 class TagHierachy:
+    """A yaml encoded tag hierarchy."""
+
     def __init__(self, file_path: Path) -> None:
+        """Deserialize a yaml encoded tag hierarchy.
+
+        Args:
+            file_path: The file containing the tag hierarchy to work with
+
+        Raises:
+            ValueError: If file_path does not end in .yml or .yaml
+        """
+
         if file_path is None or (
             not file_path.lower().endswith(".yml")
             and not file_path.lower().endswith(".yaml")
@@ -89,18 +131,27 @@ class TagHierachy:
         self.load_tags()
 
     def load_tags(self) -> None:
+        """Reload the tag hierarchy from disk."""
         with open(self.tags_file_path, "r") as f:
             self.tags: Dict = yaml.safe_load(f)
             f.seek(0)
             self.tags_file: str = f.read()
 
     def safe_tags(self) -> None:
+        """Safe the tag hierarchy to disk."""
         with open(self.tags_file_path, "w") as f:
             f.write(self.tags_file)
 
-    def reorder_list_items(self, node: Union[Dict, List] = None) -> None:
-        """Recursivley reorder lists to put scalar items before objects."""
+    def reorder_list_items(self, node: Union[Dict, List] = None) -> None:  # noqa: R1710
+        """Reorder the tag hierarchy to put leaf tags before mappings of sub-tags.
 
+        Does not write to disk.
+
+        Args:
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+
+        """
         # First call, set initial node and start recursing
 
         if node is None:
@@ -111,7 +162,7 @@ class TagHierachy:
 
         if isinstance(node, dict) and isinstance(list(node.values())[0], list):
 
-            for key, val in node.items():
+            for key, val in node.items():  # noqa VNE002
                 self.reorder_list_items(val)
                 node[key] = val
 
@@ -121,10 +172,6 @@ class TagHierachy:
             return node
 
         if isinstance(node, list):
-            scalars: List[str] = [val for val in node if not isinstance(val, dict)]
-            objects: List = [
-                self.reorder_list_items(val) for val in node if isinstance(val, dict)
-            ]
             pyaoi.for_each(
                 node,
                 lambda item: self.reorder_list_items(item)
@@ -134,8 +181,10 @@ class TagHierachy:
             node.sort(key=lambda item: isinstance(item, dict))
 
     def add_blank_lines(self) -> None:
-        """Add blank lines before unindeted lines."""
+        """Add blank lines before unindeted lines in the tag hierarchy file.
 
+        Does not write to disk.
+        """
         lines: List[str] = self.tags_file.split("\n")
         new_lines: List[str] = []
         print(lines)
@@ -155,11 +204,22 @@ class TagHierachy:
         self.tags_file = "\n".join(new_lines)
 
     def lint(self) -> None:
+        """Add blank lines and reorder nodes."""
 
         self.reorder_list_items()
         self.add_blank_lines()
 
-    def rename_tag(self, old_tag: Tag, new_tag: Tag, node=None) -> None:
+    def rename_tag(  # noqa: C901
+        self, old_tag: Tag, new_tag: Tag, node: TagHierachyNode = None
+    ) -> None:
+        """Rename a tag in the tag hierarchy.
+
+        Args:
+            old_tag: the tag to rename
+            new_tag: the tag replacement
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+        """
         # First call, set root node and start traversing
 
         if node is None:
@@ -206,13 +266,13 @@ class TagHierachy:
                             self.tags_file = yaml.dump(self.tags)
 
                             return
-                        else:
-                            node = list_item[parent]
+                        node = list_item[parent]
 
                         break
                     # A node in parents is turned from a string to a
                     # dictionary and gets it's first child
-                    elif list_item == parent:
+
+                    if list_item == parent:
                         node[i] = {parent: []}
                         node = node[i][parent]
 
@@ -220,7 +280,16 @@ class TagHierachy:
 
             self.rename_tag(old_tag, new_tag, node)
 
-    def add_tag(self, tag: Tag, node=None) -> None:
+    def add_tag(self, tag: Tag, node: TagHierachyNode = None) -> None:  # noqa: C901
+        """Add a tag to the tag hierarchy.
+
+        The parent components of the provided tag decide where it is inserted.
+
+        Args:
+            tag: the tag to add
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+        """
         # First call, set root node and start traversing
 
         if node is None:
@@ -255,11 +324,21 @@ class TagHierachy:
                     elif list_item == parent:
                         node[i] = {parent: str(tag)}
                         self.tags_file = yaml.dump(self.tags)
+
                         return
 
             self.add_tag(tag, node)
 
-    def remove_tag(self, tag: Tag, node=None) -> None:
+    def remove_tag(self, tag: Tag, node: TagHierachyNode = None) -> None:  # noqa: C901
+        """Remove a tag from the tag hierarchy.
+
+        The parent components of the provided tag decide where it is inserted
+
+        Args:
+            tag: The tag to remove
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+        """
         # First call, set root node and start traversing
 
         if node is None:
@@ -294,12 +373,27 @@ class TagHierachy:
 
             self.remove_tag(tag, node)
 
-    def list_tags(
+    def list_tags(  # noqa: C901
         self,
         paths: List[Tag] = None,
         cur_path: Tag = None,
-        node: Union[Dict, List, str] = None,
+        node: TagHierachyNode = None,
     ) -> List[Tag]:
+        """List all tags in the tag hierarchy.
+
+        Basically returns all root-leaf paths in the tag hierarchy.
+
+        Args:
+            paths: The list of all tags(aka paths through the tag hierarchy)
+                  this parameter is only needed for recursion
+            cur_path: The current path being explored
+                  this parameter is only needed for recursion
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+
+        Returns:
+            List[Tag]: All tags in the tag hierarchy
+        """
         # First call, set root node and start traversing
 
         if node is None:
@@ -309,7 +403,8 @@ class TagHierachy:
             return paths
 
         # Leaf node reached(base case), add paths and unwind
-        elif isinstance(node, str):
+
+        if isinstance(node, str):
 
             cur_path.append(node)
 
@@ -329,14 +424,29 @@ class TagHierachy:
             for child in node:
                 self.list_tags(paths, cur_path.copy(), child)
 
-    # TODO: Find out if this returns direct children or sub paths
-    def list_child_tags(
+    def list_child_tags(  # noqa: C901
         self,
         parent_tag: Tag,
         child_tags: List[Tag] = None,
         cur_tag: Tag = None,
-        node: Union[Dict, List, str] = None,
-    ) -> List[str]:
+        node: TagHierachyNode = None,
+    ) -> List[Tag]:
+        """List all child tags of a specified tag.
+
+        Basically lists all parent_tag-leaf paths.
+
+        Args:
+            parent_tag: The tag to list child tags of
+            child_tags: The l
+            cur_tag: The current path being explored
+                  this parameter is only needed for recursion
+            node: the tag hierarchy node processed at the current iteration
+                  this parameter is only needed for recursion
+
+        Returns:
+            List[Tag]: A list of child tags of the provided parent_tag
+        """
+
         if node is None:
             child_tags = []
             self.list_child_tags(parent_tag, child_tags, [], self.tags)
@@ -344,7 +454,8 @@ class TagHierachy:
             return child_tags
 
         # Leaf node reached(base case), add child_tags and unwind
-        elif isinstance(node, str):
+
+        if isinstance(node, str):
 
             cur_tag.append(node)
 
@@ -367,6 +478,7 @@ class TagHierachy:
                 self.list_child_tags(parent_tag, child_tags, cur_tag.copy(), child)
 
     def is_leaf_tag_ambiguous(self, tag: Tag) -> bool:
+        """Check whetever or not the leaf component of tag occurs in any other tag."""
         leaf_tag: str = tag.get_leaf()
 
         return any(
@@ -375,12 +487,15 @@ class TagHierachy:
         )
 
     def try_shorten_tag_path(self, tag: Tag) -> Tag:
+        """If tag is not ambiguous, return it's leaf component."""
+
         if not self.is_leaf_tag_ambiguous(tag):
             return [tag.get_leaf()]
 
         return tag
 
     def list_tags_short_paths(self) -> List[Tag]:
+        """List all tags, only resorting to fully qualified paths where necessary."""
         tags: List[Tag] = self.list_tags()
 
         pyaoi.transform(tags, self.try_shorten_tag_path)
@@ -389,9 +504,18 @@ class TagHierachy:
 
 
 class DocumentTagHandler:
+    """A class containing static methods to interact with documents containing tags."""
+
     @staticmethod
-    def list_tags_in_document(file_path: Path) -> Optional[List[Tag]]:
-        tags: List[Tag] = []
+    def list_tags_in_document(file_path: Path) -> List[Tag]:
+        """List all tags in the specified document.
+
+        Args:
+            file_path: The path to the document to list tags of
+
+        Returns:
+            List[Tag]: The list of tags the document contains
+        """
 
         # Warning! Possibly ugly code ahead! Maybe this could work with regex only?!
         tags_line: str = DocumentTagHandler.find_tags_line(file_path)
@@ -399,18 +523,21 @@ class DocumentTagHandler:
         if not tags_line:
             return []
 
+        # Could we use regex split here?
         tag_candidates = tags_line.strip().split(",")
 
-        for candidate in tag_candidates:
-            stripped = candidate.strip()
-
-            if not (stripped.startswith("::") or stripped.endswith("::")):
-                tags.append(stripped.split("::"))
-
-        return tags
+        return [candidate for candidate in tag_candidates if is_tag(candidate)]
 
     @staticmethod
     def find_tags_line(file_path: Path) -> int:
+        """Find the file's tag line(# Tags) number.
+
+        Args:
+            file_path: The path to the document to find the tag line of
+
+        Returns:
+            int: The line number of the tag line or -1 if not present
+        """
         with open(file_path, "r") as f:
             try:
                 document: List[str] = f.read().splitlines()
@@ -421,32 +548,43 @@ class DocumentTagHandler:
 
             # Tags list either does not exist or ist empty
 
-            if i_tags_list == -1 or len(document) - 1 == i_tags_list:
+            if i_tags_list in (-1, len(document) - 1):
                 return -1
 
             return i_tags_list + 1
 
     @staticmethod
     def list_documents_with_tag(path: Path, tag: Tag) -> List[Path]:
-        files: List[Path] = []
-        files_with_tag: List[Path] = []
+        """Recursively search path for documents containing the tag tag.
 
-        for root, _, file in os.walk(path):
-            for name in file:
-                files.append(os.path.join(root, name))
+        Args:
+            path: The directory to start searching in
+            tag:  The tag to search for in the found documents
 
-        for file in files:
-            documents_tags: List[Tag] = DocumentTagHandler.list_tags_in_document(file)
+        Returns:
+            List[Path]: Paths to all documents containing the specified tag
+        """
+        file_paths: List[Path] = []
 
-            if tag in documents_tags:
-                files_with_tag.append(file)
+        for root, _, file_paths in os.walk(path):
+            for file_path in file_paths:
+                file_paths.append(os.path.join(root, file_path))
 
-                break
-
-        return files_with_tag
+        return [
+            path
+            for path in file_paths
+            if tag in DocumentTagHandler.list_tags_in_document(path)
+        ]
 
     @staticmethod
     def remove_tag(file_path: Path, tag: Tag, dry_run: bool) -> None:
+        """Remove a specified tag from a specified document at file_path.
+
+        Args:
+            file_path: The path of the document to modify
+            tag: The tag to remove from the document
+            dry_run: If True, print the new content instead of writing changes to disk
+        """
         i_tags_line: int = DocumentTagHandler.find_tags_line(file_path)
 
         document: List[str] = []
@@ -466,8 +604,9 @@ class DocumentTagHandler:
             if dry_run:
                 print(document)
             else:
-                # You might think opening the file twice is stupid, and you would be right indeed,
-                # but even more stupid is what happens if you actually try to reuse the file handle
+                # You might think opening the file twice is stupid,
+                # and you would be right indeed, but even more stupid is
+                # what happens if you actually try to reuse the file handle
                 with open(file_path, "w") as f:
                     f.writelines(document)
 
@@ -475,6 +614,14 @@ class DocumentTagHandler:
     def rename_tag(
         file_path: Path, old_name: Tag, new_name: Tag, dry_run: bool
     ) -> None:
+        """Rename a specified tag in a document at file_path.
+
+        Args:
+            file_path: The path of the document to modify
+            old_name: The tag to rename
+            new_name: The replacement tag
+            dry_run: If True, print the new content instead of writing changes to disk
+        """
         i_tags_line: int = DocumentTagHandler.find_tags_line(file_path)
 
         document: List[str] = []
@@ -496,14 +643,21 @@ class DocumentTagHandler:
             if dry_run:
                 print(document)
             else:
-                # You might think opening the file twice is stupid, and you would be
-                # right indeed, but even more stupid is what happens if you actually try
-                # to reuse the file handle
+                # You might think opening the file twice is stupid,
+                # and you would be right indeed, but even more stupid is
+                # what happens if you actually try to reuse the file handle
                 with open(file_path, "w") as f:
                     f.writelines(document)
 
     @staticmethod
     def add_tag(file_path: Path, tag: Tag, dry_run: bool) -> None:
+        """Add a specified tag to a specified document at file_path.
+
+        Args:
+            file_path: The path of the document to modify
+            tag: The tag to add to the document
+            dry_run: If True, print the new content instead of writing changes to disk
+        """
         i_tags_line: int = DocumentTagHandler.find_tags_line(file_path)
 
         document: List[str] = []
