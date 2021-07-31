@@ -324,7 +324,45 @@ class TestTagHierarchy:
             assert hierarchy.tags == {"tags": [{"bar2": ["foobar"]}, "bar"]}
 
     class TestAddTag:
-        pass
+        def test_add_top_level(self):
+            FILE_PATH: Path = create_test_file(self, "test_add_top_level", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": ["foo", "bar"]}
+            hierarchy.add_tag(libtags.Tag("baz"))
+
+            assert hierarchy.tags == {"tags": ["foo", "bar", "baz"]}
+
+        def test_add_nested(self):
+            FILE_PATH: Path = create_test_file(self, "test_add_nested", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": ["foo2"]}, "bar"]}
+            hierarchy.add_tag(libtags.Tag("foo::baz"))
+
+            assert hierarchy.tags == {"tags": [{"foo": ["foo2", "baz"]}, "bar"]}
+
+        def test_add_nested_only_child(self):
+            FILE_PATH: Path = create_test_file(
+                self, "test_add_nested_only_child", "yaml"
+            )
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": "foo2"}, "bar"]}
+            hierarchy.add_tag(libtags.Tag("foo::baz"))
+
+            assert hierarchy.tags == {"tags": [{"foo": ["foo2", "baz"]}, "bar"]}
+
+        def test_add_nested_no_children(self):
+            FILE_PATH: Path = create_test_file(
+                self, "test_add_nested_only_child", "yaml"
+            )
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": ["foo", "bar"]}
+            hierarchy.add_tag(libtags.Tag("foo::baz"))
+
+            assert hierarchy.tags == {"tags": [{"foo": "baz"}, "bar"]}
 
     class TestRemoveTag:
         pass
