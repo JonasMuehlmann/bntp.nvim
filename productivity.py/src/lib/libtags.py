@@ -178,6 +178,7 @@ class TagHierachy:
             # TODO: Clean up this mess of a function
             # Not sure how robust this is...
             # Narrator: "Turns out it isn't robust at all."
+
             if isinstance(node[i_tag], str):
                 node[i_tag] = str(new_tag)
 
@@ -201,17 +202,20 @@ class TagHierachy:
                     if isinstance(list_item, dict) and parent in list_item:
                         if isinstance(list(list_item.values())[0], str):
                             list_item[parent] = str(new_tag)
-                            # This is a bit of ahacky workaround!
+                            # This is a bit of a hacky workaround!
                             self.tags_file = yaml.dump(self.tags)
+
                             return
                         else:
                             node = list_item[parent]
+
                         break
                     # A node in parents is turned from a string to a
                     # dictionary and gets it's first child
                     elif list_item == parent:
                         node[i] = {parent: []}
                         node = node[i][parent]
+
                         break
 
             self.rename_tag(old_tag, new_tag, node)
@@ -237,17 +241,21 @@ class TagHierachy:
                 node = node[parent]
 
             elif isinstance(node, list):
-                tag.remove_root_tag()
                 parent = tag.get_direct_parent()
+                tag.remove_root_tag()
 
                 for i, list_item in enumerate(node):
                     if isinstance(list_item, dict) and parent in list_item:
+                        if isinstance(list_item[parent], str):
+                            existing_tag: str = list_item[parent]
+                            list_item[parent] = [existing_tag]
                         node = list_item[parent]
                     # A node in parents is turned from a string to a
                     # dictionary and gets it's first child
                     elif list_item == parent:
-                        node[i] = {parent: []}
-                        node = node[i][parent]
+                        node[i] = {parent: str(tag)}
+                        self.tags_file = yaml.dump(self.tags)
+                        return
 
             self.add_tag(tag, node)
 
