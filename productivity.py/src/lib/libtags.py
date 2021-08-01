@@ -347,10 +347,10 @@ class TagHierachy:
 
         # Direct parent reached, remove list item representig tag and write new hierachy
 
-        elif not tag.get_parents():
+        elif not tag.get_parents():  # noqa: R1702
             for i, list_item in enumerate(node):
-                if (isinstance(list_item, dict) and tag in list_item) or (
-                    isinstance(list_item, str) and list_item == tag
+                if (isinstance(list_item, dict) and str(tag) in list_item) or (
+                    isinstance(list_item, str) and list_item == str(tag)
                 ):
                     node.pop(i)
 
@@ -358,18 +358,31 @@ class TagHierachy:
 
         # Recurse to new tag's direct parent list
         else:
-            parent: str = tag.get_direct_parent()
+            parent: str = tag.get_root_tag()
+            tag.remove_root_tag()
 
             if isinstance(node, dict):
-                tag.remove_root_tag()
                 node = node[parent]
 
+            # TODO: This is why my parents are not proud of me...
             elif isinstance(node, list):
-                tag.remove_root_tag()
 
-                for list_item in enumerate(node):
+                for i, list_item in enumerate(node):
                     if isinstance(list_item, dict) and parent in list_item:
-                        node = list_item[parent]
+                        if isinstance(list_item[parent], list):
+                            # If after removing the list only has one item,
+                            # replace it with the remaining tag(str)
+
+                            if (
+                                len(list_item[parent]) == 2
+                                and str(tag) in list_item[parent]
+                            ):
+                                list_item[parent].remove(str(tag))
+                                list_item[parent] = list_item[parent][0]
+                            else:
+                                node = list_item[parent]
+                        elif list_item[parent] == str(tag):
+                            node[i] = parent
 
             self.remove_tag(tag, node)
 
