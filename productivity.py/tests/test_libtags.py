@@ -364,7 +364,34 @@ class TestTagHierarchy:
             assert hierarchy.tags == {"tags": [{"foo": "baz"}, "bar"]}
 
     class TestRemoveTag:
-        pass
+        def test_remove_top_level(self):
+            FILE_PATH: Path = create_test_file(self, "test_remove_top_level", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": ["foo", "bar", "baz"]}
+            hierarchy.remove_tag(libtags.Tag("baz"))
+
+            assert hierarchy.tags == {"tags": ["foo", "bar"]}
+
+        def test_remove_nested(self):
+            FILE_PATH: Path = create_test_file(self, "test_remove_nested", "yaml")
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": ["foo2", "baz"]}, "bar"]}
+            hierarchy.remove_tag(libtags.Tag("foo::baz"))
+
+            assert hierarchy.tags == {"tags": [{"foo": "foo2"}, "bar"]}
+
+        def test_remove_nested_only_child(self):
+            FILE_PATH: Path = create_test_file(
+                self, "test_remove_nested_only_child", "yaml"
+            )
+
+            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": "foo2"}, "bar"]}
+            hierarchy.remove_tag(libtags.Tag("foo::foo2"))
+
+            assert hierarchy.tags == {"tags": ["foo", "bar"]}
 
     class TestListTags:
         pass
