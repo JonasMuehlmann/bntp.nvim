@@ -178,6 +178,7 @@ class TagHierachy:
             # TODO: Clean up this mess of a function
             # Not sure how robust this is...
             # Narrator: "Turns out it isn't robust at all."
+
             if isinstance(node[i_tag], str):
                 node[i_tag] = str(new_tag)
 
@@ -203,15 +204,18 @@ class TagHierachy:
                             list_item[parent] = str(new_tag)
                             # This is a bit of ahacky workaround!
                             self.tags_file = yaml.dump(self.tags)
+
                             return
                         else:
                             node = list_item[parent]
+
                         break
                     # A node in parents is turned from a string to a
                     # dictionary and gets it's first child
                     elif list_item == parent:
                         node[i] = {parent: []}
                         node = node[i][parent]
+
                         break
 
             self.rename_tag(old_tag, new_tag, node)
@@ -296,14 +300,16 @@ class TagHierachy:
 
         if node is None:
             paths = []
-            self.list_tags(paths, [], self.tags)
+            self.list_tags(paths, [], self.tags["tags"])
 
             return paths
 
         # Leaf node reached(base case), add paths and unwind
         elif isinstance(node, str):
 
-            cur_path.append(node)
+            cur_path.append(Tag(node))
+
+            # Add all unique "sub-paths" of tag(e.g foo, foo::bar, foo::bar::baz)
 
             for i in range(1, len(cur_path) + 1):
                 if not cur_path[:i] in paths:
@@ -311,7 +317,7 @@ class TagHierachy:
 
         # Recurse from non-leaf node
         elif isinstance(node, dict):
-            cur_path.append(list(node.keys())[0])
+            cur_path.append(Tag(list(node.keys())[0]))
 
             self.list_tags(paths, cur_path.copy(), list(node.values())[0])
 
