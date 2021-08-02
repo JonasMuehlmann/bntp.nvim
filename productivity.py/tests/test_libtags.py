@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 import yaml
 from src.lib import libtags
+from src.lib.libtags import DocumentTagHandler, Tag, TagHierachy
+
 from tests.util import create_test_file
 
 # Ignores:
@@ -44,71 +46,71 @@ class TestTag:
     class TestInit:
         def test_empty(self):
             with pytest.raises(ValueError):
-                assert libtags.Tag("")
+                assert Tag("")
 
         def test_correct_tag_from_string_one_component(self):
-            assert libtags.Tag("foo_bar") == ["foo_bar"]
+            assert Tag("foo_bar") == ["foo_bar"]
 
         def test_correct_tag_from_string(self):
-            assert libtags.Tag("foo_bar::baz-123") == ["foo_bar", "baz-123"]
+            assert Tag("foo_bar::baz-123") == ["foo_bar", "baz-123"]
 
         def test_incorrect_tag_from_string(self):
             with pytest.raises(ValueError):
-                libtags.Tag("foo_bar::baz+123")
+                Tag("foo_bar::baz+123")
 
         def test_correct_tag_from_list(self):
-            assert libtags.Tag(["foo_bar", "baz-123"]) == ["foo_bar", "baz-123"]
+            assert Tag(["foo_bar", "baz-123"]) == ["foo_bar", "baz-123"]
 
     class TestStr:
         def test_single_component(self):
-            assert str(libtags.Tag("foo_bar")) == "foo_bar"
+            assert str(Tag("foo_bar")) == "foo_bar"
 
         def test_multiple_components(self):
-            assert str(libtags.Tag("foo::bar")) == "foo::bar"
+            assert str(Tag("foo::bar")) == "foo::bar"
 
     class TestGetParents:
         def test_single_component(self):
-            assert libtags.Tag("foo").get_parents() == []
+            assert Tag("foo").get_parents() == []
 
         def test_two_components(self):
-            assert libtags.Tag("foo::bar").get_parents() == ["foo"]
+            assert Tag("foo::bar").get_parents() == ["foo"]
 
         def test_three_components(self):
-            assert libtags.Tag("foo::bar::baz").get_parents() == ["foo", "bar"]
+            assert Tag("foo::bar::baz").get_parents() == ["foo", "bar"]
 
     class TestGetDirectParent:
         def test_single_component(self):
-            assert libtags.Tag("foo").get_direct_parent() is None
+            assert Tag("foo").get_direct_parent() is None
 
         def test_two_components(self):
-            assert libtags.Tag("foo::bar").get_direct_parent() == "foo"
+            assert Tag("foo::bar").get_direct_parent() == "foo"
 
         def test_three_components(self):
-            assert libtags.Tag("foo::bar::baz").get_direct_parent() == "bar"
+            assert Tag("foo::bar::baz").get_direct_parent() == "bar"
 
     class TestGetLeaf:
         def test_single_component(self):
-            assert libtags.Tag("foo").get_leaf() == "foo"
+            assert Tag("foo").get_leaf() == "foo"
 
         def test_two_components(self):
-            assert libtags.Tag("foo::bar").get_leaf() == "bar"
+            assert Tag("foo::bar").get_leaf() == "bar"
 
         def test_three_components(self):
-            assert libtags.Tag("foo::bar::baz").get_leaf() == "baz"
+            assert Tag("foo::bar::baz").get_leaf() == "baz"
 
     class TestRemoveRootTag:
         def test_single_component(self):
-            tag = libtags.Tag("foo")
+            tag = Tag("foo")
             tag.remove_root_tag()
             assert str(tag) == ""
 
         def test_two_components(self):
-            tag = libtags.Tag("foo::bar")
+            tag = Tag("foo::bar")
             tag.remove_root_tag()
             assert str(tag) == "bar"
 
         def test_three_components(self):
-            tag = libtags.Tag("foo::bar::baz")
+            tag = Tag("foo::bar::baz")
             tag.remove_root_tag()
             assert str(tag) == "bar::baz"
 
@@ -118,19 +120,19 @@ class TestTagHierarchy:
         def test_file_path_no_yaml(self):
             FILE_PATH: Path = create_test_file(self, "test_file_path_no_yaml", "foo")
             with pytest.raises(ValueError):
-                libtags.TagHierachy(FILE_PATH)
+                TagHierachy(FILE_PATH)
 
         def test_file_path_empty(self):
             with pytest.raises(ValueError):
-                libtags.TagHierachy("")
+                TagHierachy("")
 
         def test_file_path_yaml(self):
             FILE_PATH: Path = create_test_file(self, "test_file_path_yaml", "yaml")
-            libtags.TagHierachy(FILE_PATH)
+            TagHierachy(FILE_PATH)
 
         def test_file_path_yml(self):
             FILE_PATH: Path = create_test_file(self, "test_file_path_yml.yml", "yml")
-            libtags.TagHierachy(FILE_PATH)
+            TagHierachy(FILE_PATH)
 
         def test_read_file(self):
             FILE_PATH: Path = create_test_file(self, "test_read_file", "yaml")
@@ -139,7 +141,7 @@ class TestTagHierarchy:
             with open(FILE_PATH, "w") as f:
                 f.write(FILE_CONTENT)
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             assert hierarchy.tags == {"tags": ["foo", "bar"]}
             assert hierarchy.tags_file == FILE_CONTENT
 
@@ -151,7 +153,7 @@ class TestTagHierarchy:
             with open(FILE_PATH, "w") as f:
                 f.write(FILE_CONTENT)
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             assert hierarchy.tags == {"tags": ["foo", "bar"]}
             assert hierarchy.tags_file == FILE_CONTENT
 
@@ -159,7 +161,7 @@ class TestTagHierarchy:
         def test_write_file(self):
             FILE_PATH: Path = create_test_file(self, "test_write_file", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags_file = "tags:\n- foo\n- bar\n- baz\n"
             hierarchy.safe_tags()
 
@@ -173,7 +175,7 @@ class TestTagHierarchy:
                 self, "test_no_changes_only_scalar", "yaml"
             )
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": ["foo", "bar", "baz"]}
             hierarchy.reorder_list_items()
 
@@ -184,7 +186,7 @@ class TestTagHierarchy:
                 self, "test_no_changes_only_mapping", "yaml"
             )
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {
                 "tags": [{"foo": "foo2"}, {"bar": "bar2"}, {"baz": "baz2"}]
             }
@@ -196,7 +198,7 @@ class TestTagHierarchy:
         def test_mixed(self):
             FILE_PATH: Path = create_test_file(self, "test_mixed", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": [{"foo": "foo2"}, {"bar": "bar2"}, "baz"]}
             hierarchy.reorder_list_items()
             assert hierarchy.tags == {"tags": ["baz", {"foo": "foo2"}, {"bar": "bar2"}]}
@@ -204,7 +206,7 @@ class TestTagHierarchy:
         def test_mixed_nested(self):
             FILE_PATH: Path = create_test_file(self, "test_mixed", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {
                 "tags": [
                     {
@@ -245,7 +247,7 @@ class TestTagHierarchy:
         def test_no_changes(self):
             FILE_PATH: Path = create_test_file(self, "test_no_changes", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             _yml: str = """tags:
     - foo2
     - foo3
@@ -259,7 +261,7 @@ class TestTagHierarchy:
         def test_nested(self):
             FILE_PATH: Path = create_test_file(self, "test_nested", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             _yml_old: str = """tags:
     - foo:
         - bar:
@@ -287,9 +289,9 @@ class TestTagHierarchy:
         def test_rename_top_level(self):
             FILE_PATH: Path = create_test_file(self, "test_rename_top_level", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": ["foo", "bar"]}
-            hierarchy.rename_tag(libtags.Tag("foo"), libtags.Tag("bar2"))
+            hierarchy.rename_tag(Tag("foo"), Tag("bar2"))
 
             assert hierarchy.tags == {"tags": ["bar2", "bar"]}
 
@@ -298,27 +300,27 @@ class TestTagHierarchy:
                 self, "test_nested_non_leaf_only_child", "yaml"
             )
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": [{"foo": "foobar"}, "bar"]}
-            hierarchy.rename_tag(libtags.Tag("foo::foobar"), libtags.Tag("bar2"))
+            hierarchy.rename_tag(Tag("foo::foobar"), Tag("bar2"))
 
             assert hierarchy.tags == {"tags": [{"foo": "bar2"}, "bar"]}
 
         def test_nested_leaf(self):
             FILE_PATH: Path = create_test_file(self, "test_nested_non_leaf", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": [{"foo": ["foobar", "barbaz"]}, "bar"]}
-            hierarchy.rename_tag(libtags.Tag("foo::foobar"), libtags.Tag("bar2"))
+            hierarchy.rename_tag(Tag("foo::foobar"), Tag("bar2"))
 
             assert hierarchy.tags == {"tags": [{"foo": ["bar2", "barbaz"]}, "bar"]}
 
         def test_nested_non_leaf(self):
             FILE_PATH: Path = create_test_file(self, "test_nested_leaf", "yaml")
 
-            hierarchy = libtags.TagHierachy(FILE_PATH)
+            hierarchy = TagHierachy(FILE_PATH)
             hierarchy.tags = {"tags": [{"foo": ["foobar"]}, "bar"]}
-            hierarchy.rename_tag(libtags.Tag("foo"), libtags.Tag("bar2"))
+            hierarchy.rename_tag(Tag("foo"), Tag("bar2"))
 
             assert hierarchy.tags == {"tags": [{"bar2": ["foobar"]}, "bar"]}
 
@@ -329,7 +331,43 @@ class TestTagHierarchy:
         pass
 
     class TestListTags:
-        pass
+        def test_only_top_level(self):
+            FILE_PATH: Path = create_test_file(self, "test_only_top_level", "yaml")
+
+            hierarchy = TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": ["foo", "bar", "baz"]}
+
+            assert hierarchy.list_tags() == [
+                [Tag("foo")],
+                [Tag("bar")],
+                [Tag("baz")],
+            ]
+
+        def test_one_path_nested(self):
+            FILE_PATH: Path = create_test_file(self, "test_only_top_level", "yaml")
+
+            hierarchy = TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": {"bar": "baz"}}]}
+
+            assert hierarchy.list_tags() == [
+                [Tag("foo")],
+                [Tag("foo"), Tag("bar")],
+                [Tag("foo"), Tag("bar"), Tag("baz")],
+            ]
+
+        def test_many_nested(self):
+            FILE_PATH: Path = create_test_file(self, "test_only_top_level", "yaml")
+
+            hierarchy = TagHierachy(FILE_PATH)
+            hierarchy.tags = {"tags": [{"foo": {"bar": "baz"}}, {"foo2": "bar2"}]}
+
+            assert hierarchy.list_tags() == [
+                [Tag("foo")],
+                [Tag("foo"), Tag("bar")],
+                [Tag("foo"), Tag("bar"), Tag("baz")],
+                [Tag("foo2")],
+                [Tag("foo2"), Tag("bar2")],
+            ]
 
     class TestListChildTags:
         pass
