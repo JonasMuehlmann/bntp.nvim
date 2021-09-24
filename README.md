@@ -4,3 +4,5 @@
 Neovim integration for my personal all-in-one productivity system including components like bookmarks, notes, todos, projects, etc.
 
 Core functionality available at https://github.com/JonasMuehlmann/bntp.go
+
+https://github.com/hrsh7th/nvim-cmp completion source available at https://github.com/JonasMuehlmann/cmp-bntp
