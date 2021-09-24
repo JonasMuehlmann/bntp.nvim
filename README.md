@@ -6,3 +6,4 @@ Neovim integration for my personal all-in-one productivity system including comp
 Core functionality available at https://github.com/JonasMuehlmann/bntp.go
 
 https://github.com/hrsh7th/nvim-cmp completion source available at https://github.com/JonasMuehlmann/cmp-bntp
+https://github.com/nvim-telescope/telescope.nvim finders available at https://github.com/JonasMuehlmann/telescope-bntp
