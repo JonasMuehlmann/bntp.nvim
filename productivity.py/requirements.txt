@@ -1,4 +1,0 @@
-PyYAML
-pyaoi
-docopt
-schema
