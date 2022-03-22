@@ -7,3 +7,8 @@ Backend developed at https://github.com/JonasMuehlmann/bntp.go
 
 https://github.com/hrsh7th/nvim-cmp completion source developed at https://github.com/JonasMuehlmann/cmp-bntp
 https://github.com/nvim-telescope/telescope.nvim finders developed at https://github.com/JonasMuehlmann/telescope-bntp
+
+## License
+Copyright (C) 2020-2022 [Jonas Muehlmann](https://github.com/JonasMuehlmann)
+ 
+The project is licensed under the terms of the MIT license, you can view it [here](LICENSE.md).
